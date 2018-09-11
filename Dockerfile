@@ -1,22 +1,8 @@
 FROM jupyter/all-spark-notebook
-#:5811dcb711ba
-
-# For faster download speed and more reliable building this image with old
-# proxy settings.
 
 LABEL maintainer="Ogi Stancevic <ognjen.stancevic@westpac.com.au>"
 
-ENV HTTP_PROXY http://172.17.0.1:3128
-ENV HTTPS_PROXY http://172.17.0.1:3128
-ENV http_proxy http://172.17.0.1:3128
-ENV https_proxy http://172.17.0.1:3128
-
 USER root
-RUN echo 'Acquire::http::proxy "http://172.17.0.1:3128";' >> /etc/apt/apt.conf.d/99proxy
-ENV HTTP_PROXY http://172.17.0.1:3128
-ENV HTTPS_PROXY http://172.17.0.1:3128
-ENV http_proxy http://172.17.0.1:3128
-ENV https_proxy http://172.17.0.1:3128
 
 RUN conda install --quiet --yes\
 	-c damianavila82 rise && \

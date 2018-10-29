@@ -57,7 +57,7 @@ RUN conda install --yes \
 	'r-reshape2' \
         'r-feather' \ 
 	'r-hmisc' \
-	'r-cpproll' \
+	'r-rcpproll' \
 	'r-getpass' \
 	'r-gdtools' \
 	'r-flextable' \
@@ -67,8 +67,6 @@ RUN conda install --yes \
 	jupyter_contrib_nbextensions \
 	rpy2 \
 	altair \
-	pandas_profiling \ 
-	sql_magic \
 	tzlocal \
 	saspy \
 	sas_kernel \ 
@@ -79,7 +77,9 @@ RUN conda install --yes \
 	fix-permissions $CONDA_DIR && \
 	fix-permissions /home/$NB_USER
 
-RUN pip install jupyterlab_templates && \
+RUN pip install jupyterlab_templates\
+	pandas_profiling \ 
+	sql_magic && \
   jupyter labextension install jupyterlab_templates && \
   jupyter serverextension enable --py jupyterlab_templates
 

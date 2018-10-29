@@ -1,64 +1,108 @@
-FROM jupyter/all-spark-notebook
+FROM jupyter/pyspark-notebook
 
 LABEL maintainer="Ogi Stancevic <ognjen.stancevic@westpac.com.au>"
 
+RUN conda update --yes --all
+
+RUN jupyter labextension install --no-build @jupyterlab/toc && \ 
+ jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager && \
+ jupyter labextension install --no-build jupyterlab_bokeh && \
+ jupyter labextension install --no-build @jupyterlab/hub-extension && \
+ pip install nbdime && \
+ jupyter lab build
+
 USER root
 
-RUN conda install --quiet --yes\
-	-c damianavila82 rise && \
+# RSpark config
+ENV R_LIBS_USER $SPARK_HOME/R/lib
+RUN fix-permissions $R_LIBS_USER
+
+# R pre-requisites
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    fonts-dejavu \
+    tzdata \
+    gfortran \
+    gcc \
+    gdebi-core \ 
+    openssh-client \ 
+    sshfs \
+    libcairo2-dev \
+    unixodbc-dev  \
+    less \
+    gnuplot \
+    libnetcdf-dev \
+    octave \ 
+    zlib1g-dev \
+    libssl-dev \ 
+    libssh2-1-dev \ 
+    libcurl4-openssl-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+
+
+# R packages
+RUN conda install --yes \  
+	mro-base  \
+	r-irkernel  && \
+    conda install --yes -c conda-forge \
+	r-devtools  \
+	'r-tidyverse'\ 
+	'r-sparklyr' \
+	 'r-expm' \
+	'r-remotes' \
+ 	'r-fs' \
+	'r-highr' \ 
+	'r-reshape2' \
+        'r-feather' \ 
+	'r-hmisc' \
+	'r-cpproll' \
+	'r-getpass' \
+	'r-gdtools' \
+	'r-flextable' \
+	'r-rcpp' \
+	'r-rlang' \
+	'r-reticulate' \
+	jupyter_contrib_nbextensions \
+	rpy2 \
+	altair \
+	pandas_profiling \ 
+	sql_magic \
+	tzlocal \
+	saspy \
+	sas_kernel \ 
+	colorama \
+	octave_kernel && \
 	conda clean -tipsy && \
+        rm -rf /home/$NB_USER/.local && \
 	fix-permissions $CONDA_DIR && \
 	fix-permissions /home/$NB_USER
 
-RUN conda install --quiet --yes\
-		-c conda-forge \
-		jupyter_contrib_nbextensions \
-		rpy2 \
-    saspy \
-		sas_kernel && \
-		conda clean -tipsy && \
-		fix-permissions $CONDA_DIR && \
-		fix-permissions /home/$NB_USER
-
-#RUN jupyter labextension install @jupyterlab/latex
-RUN pip install jupyterlab_latex  \
-		pandas_profiling \
-		sql_magic\
-		brunel && \
-    rm -rf /home/$NB_USER/.local && \
-    fix-permissions $CONDA_DIR && \
-    fix-permissions /home/$NB_USER
-
-# Install jupyterlab extensions here
-RUN jupyter labextension install @jupyterlab/toc
-
-RUN pip install jupyterlab_templates
-RUN jupyter labextension install jupyterlab_templates
-RUN jupyter serverextension enable --py jupyterlab_templates
-
-
-USER root
-
-RUN apt-get update
-RUN apt-get install -y gdebi-core openssh-client sshfs libcairo2-dev unixodbc-dev
-RUN rm -rf /var/cache/apt/*
+RUN pip install jupyterlab_templates && \
+  jupyter labextension install jupyterlab_templates && \
+  jupyter serverextension enable --py jupyterlab_templates
 
 # Install rstudio server
-RUN wget --no-check-certificate https://download2.rstudio.org/rstudio-server-1.1.453-amd64.deb
-RUN gdebi -n rstudio-server-1.1.453-amd64.deb
-RUN rm rstudio-server-1.1.453-amd64.deb
-RUN echo "rsession-which-r=/opt/conda/bin/R" >> /etc/rstudio/rserver.conf
-
+RUN wget --no-check-certificate https://download2.rstudio.org/rstudio-server-1.1.453-amd64.deb && \
+	gdebi -n rstudio-server-1.1.453-amd64.deb && \
+	rm rstudio-server-1.1.453-amd64.deb  && \
+	echo "rsession-which-r=/opt/conda/bin/R" >> /etc/rstudio/rserver.conf
 
 
 EXPOSE 8787
 
+USER $NB_UID
+WORKDIR /home/$NB_USER
+
+#RUN octave --no-gui --eval "pkg install -verbose -forge -auto netcdf" && \
+# octave --no-gui --eval "pkg install -verbose -forge -auto io" && \
+# octave --no-gui --eval "pkg install -verbose -forge -auto statistics"
+
+
 #setup R configs
-RUN echo "r <- getOption('repos'); r['CRAN'] <- 'http://cran.us.r-project.org'; options(repos = r);" > ~/.Rprofile
 RUN echo ".libPaths('/opt/conda/lib/R/library')" >> ~/.Rprofile
-RUN Rscript -e "install.packages(c('tidyverse', 'sparklyr', 'expm', 'remotes', 'fs', 'highr', 'markdown', 'caTools', 'knitr', 'rmarkdown', 'reshape2'))" && \
-	 Rscript -e "install.packages(c('curl', 'feather','Hmisc', 'RcppRoll', 'fs', 'getPass', 'gdtools', flextable', 'ggplot2', 'fansi', 'mgcv', 'pillar'))" && \
-	 Rscript -e "install.packages(c('Rcpp', 'rlang', 'reticulate'))"
+
 
 # Enable Jupyter extensions here
 RUN jupyter nbextension enable codefolding/main && \
@@ -78,15 +122,8 @@ RUN jupyter nbextension enable codefolding/main && \
  jupyter nbextension enable tree-filter/index
 
 
-		
-RUN pip install qgrid \
-	tqdm \
-	colorama && \
-    rm -rf /home/$NB_USER/.local 
-
-
 RUN fix-permissions $CONDA_DIR && \
-		fix-permissions /home/$NB_USER
+	fix-permissions /home/$NB_USER
 
 
 USER $NB_UID

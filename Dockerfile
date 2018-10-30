@@ -17,7 +17,7 @@ USER root
 ENV R_LIBS_USER $SPARK_HOME/R/lib
 RUN fix-permissions $R_LIBS_USER
 
-# R pre-requisites
+# R and Octave pre-requisites
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     fonts-dejavu \
@@ -42,28 +42,23 @@ RUN apt-get update && \
 
 
 
-# R packages
+# R and essential R packages
 RUN conda install --yes \  
-	mro-base  \
-	r-irkernel  && \
-    conda install --yes -c conda-forge \
-	r-devtools  \
-	'r-tidyverse'\ 
-	'r-sparklyr' \
-	 'r-expm' \
-	'r-remotes' \
- 	'r-fs' \
-	'r-highr' \ 
-	'r-reshape2' \
-        'r-feather' \ 
-	'r-hmisc' \
-	'r-rcpproll' \
-	'r-getpass' \
-	'r-gdtools' \
-	'r-flextable' \
-	'r-rcpp' \
-	'r-rlang' \
-	'r-reticulate' \
+	mro-base 
+RUN conda install --yes \
+	r-irkernel \
+	r-tidyverse 
+
+
+#setup R configs
+RUN echo ".libPaths('/opt/conda/lib/R/library')" >> ~/.Rprofile
+
+# Install additional R packages here
+COPY install_packages.R /tmp/install_packages.R 
+RUN R --no-save </tmp/install_packages.R 
+
+
+RUN conda install -c conda-forge \
 	jupyter_contrib_nbextensions \
 	rpy2 \
 	altair \
@@ -71,6 +66,8 @@ RUN conda install --yes \
 	saspy \
 	sas_kernel \ 
 	colorama \
+	feather-format \
+	pyarrow \
 	octave_kernel && \
 	conda clean -tipsy && \
         rm -rf /home/$NB_USER/.local && \
@@ -79,15 +76,39 @@ RUN conda install --yes \
 
 RUN pip install jupyterlab_templates\
 	pandas_profiling \ 
+	jira \
+	python-docx \
 	sql_magic && \
-  jupyter labextension install jupyterlab_templates && \
+  jupyter labextension install jupyterlab_templates && 
   jupyter serverextension enable --py jupyterlab_templates
 
 # Install rstudio server
-RUN wget --no-check-certificate https://download2.rstudio.org/rstudio-server-1.1.453-amd64.deb && \
-	gdebi -n rstudio-server-1.1.453-amd64.deb && \
-	rm rstudio-server-1.1.453-amd64.deb  && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+     libapparmor1 \
+     libedit2 \
+     libc6 \
+     psmisc \
+     lsb-release \
+     rrdtool && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+	 wget --no-check-certificate https://download2.rstudio.org/rstudio-server-1.1.456-amd64.deb && \
+	gdebi -n rstudio-server-1.1.456-amd64.deb && \
+	rm rstudio-server-1.1.456-amd64.deb  && \
 	echo "rsession-which-r=/opt/conda/bin/R" >> /etc/rstudio/rserver.conf
+
+WORKDIR /tmp
+
+# Install octave and octave_kernel
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential make \
+        liboctave-dev  \
+        gnuplot-x11 \
+        libopenblas-base libatlas3-base \
+        ghostscript pstoedit && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 
 EXPOSE 8787
@@ -99,15 +120,13 @@ WORKDIR /home/$NB_USER
 # octave --no-gui --eval "pkg install -verbose -forge -auto io" && \
 # octave --no-gui --eval "pkg install -verbose -forge -auto statistics"
 
-
 #setup R configs
 RUN echo ".libPaths('/opt/conda/lib/R/library')" >> ~/.Rprofile
 
 
+
 # Enable Jupyter extensions here
-RUN jupyter nbextension enable codefolding/main && \
- jupyter nbextension enable latex_envs/latex_envs && \
- jupyter nbextension enable collapsible_headings/main && \
+RUN jupyter nbextension enable collapsible_headings/main && \
  jupyter nbextension enable snippets/main && \
  jupyter nbextension enable toc2/main && \
  jupyter nbextension enable varInspector/main && \
@@ -116,14 +135,7 @@ RUN jupyter nbextension enable codefolding/main && \
  jupyter nbextension enable python-markdown/main && \
  jupyter nbextension enable spellchecker/main && \
  jupyter nbextension enable hide_input_all/main && \
- jupyter nbextension enable scratchpad/main && \
  jupyter nbextension enable execute_time/ExecuteTime && \
  jupyter nbextension enable export_embedded/main && \
  jupyter nbextension enable tree-filter/index
 
-
-RUN fix-permissions $CONDA_DIR && \
-	fix-permissions /home/$NB_USER
-
-
-USER $NB_UID

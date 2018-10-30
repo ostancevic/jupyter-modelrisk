@@ -79,7 +79,7 @@ RUN pip install jupyterlab_templates\
 	jira \
 	python-docx \
 	sql_magic && \
-  jupyter labextension install jupyterlab_templates && 
+  jupyter labextension install jupyterlab_templates && \
   jupyter serverextension enable --py jupyterlab_templates
 
 # Install rstudio server

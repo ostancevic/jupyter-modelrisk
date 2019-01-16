@@ -17,7 +17,14 @@ USER root
 ENV R_LIBS_USER $SPARK_HOME/R/lib
 RUN fix-permissions $R_LIBS_USER
 
-# R and Octave pre-requisites
+RUN dpkg --add-architecture i386 && \
+ 	apt-get update && sudo apt-get -y upgrade && \
+	apt-get install -y --no-install-recommends \
+	lib32gcc1 \
+	lib32stdc++6 \
+	libcurl4-gnutls-dev:i386 
+
+# Teradata, R and Octave pre-requisites
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     fonts-dejavu \
@@ -36,9 +43,21 @@ RUN apt-get update && \
     zlib1g-dev \
     libssl-dev \ 
     libssh2-1-dev \ 
-    libcurl4-openssl-dev && \
+    build-essential make \
+    liboctave-dev  \
+    gnuplot-x11 \
+    libopenblas-base \ 
+    libatlas3-base \
+    ghostscript pstoedit  \
+    libcurl4-openssl-dev \
+    libapparmor1 \
+    libedit2 \
+    libc6 \
+    psmisc \
+    lsb-release \
+    rrdtool && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 
 
@@ -68,6 +87,8 @@ RUN conda install -c conda-forge \
 	colorama \
 	feather-format \
 	pyarrow \
+	pandas-profiling \
+	python-docx \
 	octave_kernel && \
 	conda clean -tipsy && \
         rm -rf /home/$NB_USER/.local && \
@@ -75,43 +96,22 @@ RUN conda install -c conda-forge \
 	fix-permissions /home/$NB_USER
 
 RUN pip install jupyterlab_templates\
-	pandas_profiling \ 
 	jira \
-	python-docx \
 	sql_magic && \
   jupyter labextension install jupyterlab_templates && \
   jupyter serverextension enable --py jupyterlab_templates
 
 # Install rstudio server
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-     libapparmor1 \
-     libedit2 \
-     libc6 \
-     psmisc \
-     lsb-release \
-     rrdtool && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-	 wget --no-check-certificate https://download2.rstudio.org/rstudio-server-1.1.456-amd64.deb && \
-	gdebi -n rstudio-server-1.1.456-amd64.deb && \
-	rm rstudio-server-1.1.456-amd64.deb  && \
+RUN wget https://download2.rstudio.org/rstudio-server-1.1.463-amd64.deb && \
+	gdebi -n rstudio-server-1.1.463-amd64.deb && \
+	rm rstudio-server-1.1.463-amd64.deb  && \
 	echo "rsession-which-r=/opt/conda/bin/R" >> /etc/rstudio/rserver.conf
+
 
 WORKDIR /tmp
 
-# Install octave and octave_kernel
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential make \
-        liboctave-dev  \
-        gnuplot-x11 \
-        libopenblas-base libatlas3-base \
-        ghostscript pstoedit && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-
 EXPOSE 8787
+
 
 USER $NB_UID
 WORKDIR /home/$NB_USER

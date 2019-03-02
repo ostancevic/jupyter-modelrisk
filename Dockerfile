@@ -26,7 +26,7 @@ RUN apt-get update && \
     dpkg \
     libcairo2-dev \
     unixodbc-dev  \
-    lib32stdc++6 \
+    lib32stdc++6 && \
     apt-get clean && \ 
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/*
 
@@ -60,7 +60,7 @@ RUN conda install -c conda-forge \
 	feather-format \
 	pyarrow \
 	pandas-profiling \
-	python-docx \
+	python-docx && \
 	conda clean -tipsy && \
         rm -rf /home/$NB_USER/.local && \
 	fix-permissions $CONDA_DIR && \

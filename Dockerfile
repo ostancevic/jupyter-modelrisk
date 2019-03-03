@@ -2,10 +2,12 @@ FROM jupyter/pyspark-notebook
 
 LABEL maintainer="Ogi Stancevic <ognjen.stancevic@westpac.com.au>"
 
-RUN conda config --add channels conda-forge &&\ 
+RUN conda config --append channels conda-forge &&\
+    conda config --append channels r &&\
     conda update --yes --all
 
-RUN jupyter labextension install --no-build @jupyterlab/toc && \ 
+RUN conda install -y nodejs
+RUN jupyter labextension install --no-build @jupyterlab/toc && \
  jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager && \
  jupyter labextension install --no-build @jupyterlab/hub-extension && \
  jupyter lab build
@@ -27,27 +29,28 @@ RUN apt-get update && \
     libcairo2-dev \
     unixodbc-dev  \
     lib32stdc++6 && \
-    apt-get clean && \ 
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/*
 
+USER $NB_UID
 
 # R and essential R packages
-RUN conda install --yes \  
-	mro-base 
+RUN conda install --yes \
+	mro-base
 RUN conda install --yes \
 	r-irkernel \
-	r-tidyverse 
+	r-tidyverse
 
 
 #setup R configs
 RUN echo ".libPaths('/opt/conda/lib/R/library')" >> ~/.Rprofile
 
 # Install additional R packages here
-#COPY install_packages.R /tmp/install_packages.R 
-#RUN R --no-save </tmp/install_packages.R 
+#COPY install_packages.R /tmp/install_packages.R
+#RUN R --no-save </tmp/install_packages.R
 
 
-RUN conda install -c conda-forge \
+RUN conda install \
 	jupyter_contrib_nbextensions \
 	rpy2 \
 	altair \
@@ -55,16 +58,16 @@ RUN conda install -c conda-forge \
 	jira \
 	tzlocal \
 	saspy \
-	sas_kernel \ 
+	sas_kernel \
 	colorama \
 	feather-format \
 	pyarrow \
 	pandas-profiling \
 	python-docx && \
-	conda clean -tipsy && \
-        rm -rf /home/$NB_USER/.local && \
-	fix-permissions $CONDA_DIR && \
-	fix-permissions /home/$NB_USER
+	conda clean -a -y
+  #rm -rf /home/$NB_USER/.local && \
+	#fix-permissions $CONDA_DIR && \
+	#fix-permissions /home/$NB_USER
 
 RUN pip install jupyterlab_templates\
 	sql_magic && \
@@ -72,13 +75,46 @@ RUN pip install jupyterlab_templates\
   jupyter serverextension enable --py jupyterlab_templates
 
 
-EXPOSE 8787
 
-USER $NB_UID
-WORKDIR /home/$NB_USER
+# More R packages
+RUN conda install \
+  r-sparklyr \
+  r-fs \
+  r-reticulate \
+# r-getpass \
+  r-hmisc \
+  r-rcpp \
+#  r-docxtractr \
+  r-odbc \
+  r-evaluate \
+  r-data.table \
+  r-expm \
+  r-rlang \
+  r-remotes \
+  r-flextable \
+  r-mlr \
+  r-ranger \
+  r-rcurl \
+  r-jsonlite
+
+
+# Trying to install h2o
+RUN conda install -y -c h2oai h2o && \
+	conda clean -a -y
 
 #setup R configs
 RUN echo ".libPaths('/opt/conda/lib/R/library')" >> ~/.Rprofile
+
+# Install h2o for R
+RUN Rscript -e 'install.packages("h2o", repos=(c("http://h2o-release.s3.amazonaws.com/h2o/latest_stable_R")))'
+
+
+EXPOSE 8787
+
+RUN rm -rf /home/$NB_USER/.local
+
+WORKDIR /home/$NB_USER
+
 
 # Enable Jupyter extensions here
 RUN jupyter nbextension enable collapsible_headings/main && \

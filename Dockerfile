@@ -25,6 +25,10 @@ RUN apt-get update && \
     gdebi-core \
     openssh-client \
     sshfs \
+    fonts-dejavu \
+    tzdata \
+    gfortran \
+    gcc \
     dpkg \
     libcairo2-dev \
     unixodbc-dev  \
@@ -32,23 +36,23 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/*
 
+RUN rm -rf /opt/conda/var/cache/*
+
 USER $NB_UID
 
-# R and essential R packages
-RUN conda install --yes \
-	mro-base
-RUN conda install --yes \
-	r-irkernel \
-	r-tidyverse
-
+# R packages
+RUN conda install --quiet --yes \
+    'r-base=3.5.1' \
+    'r-irkernel=0.8*' \
+    'r-ggplot2=3.1*' \
+    'r-sparklyr=0.9*' \
+    'r-rcurl=1.95*' && \
+    conda clean -a -y 
 
 #setup R configs
-RUN echo ".libPaths('/opt/conda/lib/R/library')" >> ~/.Rprofile
+RUN echo ".libPaths('/opt/conda/lib/R/library')" >> /home/$NB_USER//.Rprofile
 
 # Install additional R packages here
-#COPY install_packages.R /tmp/install_packages.R
-#RUN R --no-save </tmp/install_packages.R
-
 
 RUN conda install \
 	jupyter_contrib_nbextensions \
@@ -65,9 +69,6 @@ RUN conda install \
 	pandas-profiling \
 	python-docx && \
 	conda clean -a -y
-  #rm -rf /home/$NB_USER/.local && \
-	#fix-permissions $CONDA_DIR && \
-	#fix-permissions /home/$NB_USER
 
 RUN pip install jupyterlab_templates\
 	sql_magic && \
@@ -78,7 +79,7 @@ RUN pip install jupyterlab_templates\
 
 # More R packages
 RUN conda install \
-  r-sparklyr \
+  r-tidyverse \
   r-fs \
   r-reticulate \
 # r-getpass \
@@ -95,7 +96,14 @@ RUN conda install \
   r-mlr \
   r-ranger \
   r-rcurl \
-  r-jsonlite
+  r-feather \
+  r-jsonlite \
+  r-gbm \
+  r-xgboost \
+  r-randomforest \
+  qgrid \
+  simplegeneric \
+  tqdm
 
 
 # Trying to install h2o

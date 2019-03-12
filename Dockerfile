@@ -42,15 +42,12 @@ USER $NB_UID
 
 # R packages
 RUN conda install --quiet --yes \
-    'r-base=3.5.1' \
+    'r-mro' \
     'r-irkernel=0.8*' \
-    'r-ggplot2=3.1*' \
-    'r-sparklyr=0.9*' \
-    'r-rcurl=1.95*' && \
+    'r-tidyverse' \
+    'r-rcurl' && \
     conda clean -a -y 
 
-#setup R configs
-RUN echo ".libPaths('/opt/conda/lib/R/library')" >> /home/$NB_USER//.Rprofile
 
 # Install additional R packages here
 
@@ -82,10 +79,8 @@ RUN conda install \
   r-tidyverse \
   r-fs \
   r-reticulate \
-# r-getpass \
   r-hmisc \
   r-rcpp \
-#  r-docxtractr \
   r-odbc \
   r-evaluate \
   r-data.table \
@@ -115,7 +110,8 @@ RUN echo ".libPaths('/opt/conda/lib/R/library')" >> ~/.Rprofile
 
 # Install h2o for R
 RUN Rscript -e 'install.packages("h2o", repos=(c("http://h2o-release.s3.amazonaws.com/h2o/latest_stable_R")))'
-
+RUN echo "local({r <- getOption('repos'); r['CRAN'] <- 'https://mran.microsoft.com/snapshot/2019-01-31'; options(repos = r)})" >> /home/$NB_USER//.Rprofile
+RUN Rscript -e "install.packages('sparklyr')"
 
 EXPOSE 8787
 

@@ -4,7 +4,8 @@ LABEL maintainer="Ogi Stancevic <ognjen.stancevic@westpac.com.au>"
 
 RUN conda config --append channels conda-forge &&\
     conda config --append channels r &&\
-    conda update --yes --all
+    conda update --yes --all &&\
+	conda clean -a -y
 
 RUN conda install -y nodejs
 RUN jupyter labextension install --no-build @jupyterlab/toc && \
@@ -30,6 +31,8 @@ RUN apt-get update && \
     gfortran \
     gcc \
     dpkg \
+    cifs-utils \
+    vim \
     libcairo2-dev \
     unixodbc-dev  \
     lib32stdc++6 && \
@@ -41,17 +44,11 @@ RUN rm -rf /opt/conda/var/cache/*
 USER $NB_UID
 
 # R packages
+# Install additional R packages here
 RUN conda install --quiet --yes \
     'r-mro' \
     'r-irkernel=0.8*' \
-    'r-tidyverse' \
-    'r-rcurl' && \
-    conda clean -a -y 
-
-
-# Install additional R packages here
-
-RUN conda install \
+    'r-rcurl' \ 
 	jupyter_contrib_nbextensions \
 	rpy2 \
 	altair \
@@ -64,59 +61,27 @@ RUN conda install \
 	feather-format \
 	pyarrow \
 	pandas-profiling \
+  	qgrid \
+  	simplegeneric \
+  	tqdm &&\
 	python-docx && \
-	conda clean -a -y
+    conda install -y -c h2oai h2o && \
+    conda clean -a -y
 
 RUN pip install jupyterlab_templates\
-	sql_magic && \
   jupyter labextension install jupyterlab_templates && \
   jupyter serverextension enable --py jupyterlab_templates
 
-
-
-# More R packages
-RUN conda install \
-  r-tidyverse \
-  r-fs \
-  r-reticulate \
-  r-hmisc \
-  r-rcpp \
-  r-odbc \
-  r-evaluate \
-  r-data.table \
-  r-expm \
-  r-rlang \
-  r-remotes \
-  r-flextable \
-  r-mlr \
-  r-ranger \
-  r-rcurl \
-  r-feather \
-  r-jsonlite \
-  r-gbm \
-  r-xgboost \
-  r-randomforest \
-  qgrid \
-  simplegeneric \
-  tqdm
-
-
-# Trying to install h2o
-RUN conda install -y -c h2oai h2o && \
-	conda clean -a -y
-
 #setup R configs
-RUN echo ".libPaths('/opt/conda/lib/R/library')" >> ~/.Rprofile
-
 # Install h2o for R
-RUN Rscript -e 'install.packages("h2o", repos=(c("http://h2o-release.s3.amazonaws.com/h2o/latest_stable_R")))'
-RUN echo "local({r <- getOption('repos'); r['CRAN'] <- 'https://mran.microsoft.com/snapshot/2019-01-31'; options(repos = r)})" >> /home/$NB_USER//.Rprofile
-RUN Rscript -e "install.packages('sparklyr')"
+RUN echo ".libPaths('/opt/conda/lib/R/library')" >> ~/.Rprofile &&\
+    echo "local({r <- getOption('repos'); r['CRAN'] <- 'https://mran.microsoft.com/snapshot/2019-01-31'; options(repos = r)})" >> /home/$NB_USER/.Rprofile &&\
+   Rscript -e 'install.packages("h2o", repos=(c("http://h2o-release.s3.amazonaws.com/h2o/latest_stable_R")))' && \
+   Rscript -e "install.packages('sparklyr')"
 
 EXPOSE 8787
 
 RUN rm -rf /home/$NB_USER/.local
-
 WORKDIR /home/$NB_USER
 
 

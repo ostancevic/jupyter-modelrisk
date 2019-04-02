@@ -63,7 +63,7 @@ RUN conda install --quiet --yes \
 	pandas-profiling \
   	qgrid \
   	simplegeneric \
-  	tqdm &&\
+  	tqdm \
 	python-docx && \
     conda install -y -c h2oai h2o && \
     conda clean -a -y

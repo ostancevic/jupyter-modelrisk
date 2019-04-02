@@ -68,7 +68,7 @@ RUN conda install --quiet --yes \
     conda install -y -c h2oai h2o && \
     conda clean -a -y
 
-RUN pip install jupyterlab_templates\
+RUN pip install jupyterlab_templates &&\
   jupyter labextension install jupyterlab_templates && \
   jupyter serverextension enable --py jupyterlab_templates
 

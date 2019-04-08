@@ -64,6 +64,7 @@ RUN conda install --quiet --yes \
   	qgrid \
   	simplegeneric \
   	tqdm \
+	pyodbc \
 	python-docx && \
     conda install -y -c h2oai h2o && \
     conda clean -a -y

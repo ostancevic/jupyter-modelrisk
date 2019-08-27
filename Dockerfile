@@ -46,9 +46,10 @@ USER $NB_UID
 # R packages
 # Install additional R packages here
 RUN conda install --quiet --yes \
-    'r-mro' \
-    'r-irkernel=0.8*' \
-    'r-rcurl' \ 
+    'r-base=3.6.1' \
+    'r-irkernel=1.0*' \
+    'r-rcurl=1.95*' \
+    'r-sparklyr=1.0*' \
 	jupyter_contrib_nbextensions \
 	rpy2 \
 	altair \
@@ -100,10 +101,8 @@ RUN pip install jupyterlab_templates &&\
 #setup R configs
 # Install h2o for R
 RUN echo ".libPaths('/opt/conda/lib/R/library')" >> ~/.Rprofile &&\
-    echo "local({r <- getOption('repos'); r['CRAN'] <- 'https://mran.microsoft.com/snapshot/2019-01-31'; options(repos = r)})" >> /home/$NB_USER/.Rprofile &&\
-   Rscript -e 'install.packages("h2o", repos=(c("http://h2o-release.s3.amazonaws.com/h2o/latest_stable_R")))' && \
-   Rscript -e "install.packages('sparklyr')"
-
+    echo "local({r <- getOption('repos'); r['CRAN'] <- 'https://mran.microsoft.com/snapshot/2019-07-31'; options(repos = r)})" >> /home/$NB_USER/.Rprofile &&\
+   Rscript -e 'install.packages("h2o", repos=(c("http://h2o-release.s3.amazonaws.com/h2o/latest_stable_R")))' && 
 EXPOSE 8787
 
 RUN rm -rf /home/$NB_USER/.local

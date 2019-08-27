@@ -105,6 +105,10 @@ RUN echo ".libPaths('/opt/conda/lib/R/library')" >> ~/.Rprofile &&\
    Rscript -e 'install.packages("h2o", repos=(c("http://h2o-release.s3.amazonaws.com/h2o/latest_stable_R")))'  
 EXPOSE 8787
 
+# Install additional R packages here
+COPY install_packages.R /tmp/install_packages.R 
+RUN R --no-save </tmp/install_packages.R 
+
 RUN rm -rf /home/$NB_USER/.local
 WORKDIR /home/$NB_USER
 

@@ -102,12 +102,13 @@ RUN pip install jupyterlab_templates &&\
 # Install h2o for R
 RUN echo ".libPaths('/opt/conda/lib/R/library')" >> ~/.Rprofile &&\
     echo "local({r <- getOption('repos'); r['CRAN'] <- 'https://mran.microsoft.com/snapshot/2019-07-31'; options(repos = r)})" >> /home/$NB_USER/.Rprofile &&\
-   Rscript -e 'install.packages("h2o", repos=(c("http://h2o-release.s3.amazonaws.com/h2o/latest_stable_R")))' && 
+   Rscript -e 'install.packages("h2o", repos=(c("http://h2o-release.s3.amazonaws.com/h2o/latest_stable_R")))'  
 EXPOSE 8787
 
 RUN rm -rf /home/$NB_USER/.local
 WORKDIR /home/$NB_USER
 
+RUN jupyter labextension install @ijmbarr/jupyterlab_spellchecker
 
 # Enable Jupyter extensions here
 RUN jupyter nbextension enable collapsible_headings/main && \

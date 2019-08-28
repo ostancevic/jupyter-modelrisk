@@ -112,7 +112,7 @@ RUN R --no-save </tmp/install_packages.R
 RUN rm -rf /home/$NB_USER/.local
 WORKDIR /home/$NB_USER
 
-RUN jupyter labextension install @ijmbarr/jupyterlab_spellchecker
+#RUN jupyter labextension install @ijmbarr/jupyterlab_spellchecker
 
 # Enable Jupyter extensions here
 RUN jupyter nbextension enable collapsible_headings/main && \

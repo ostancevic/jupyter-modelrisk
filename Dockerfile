@@ -99,28 +99,6 @@ RUN pip install jupyterlab_templates &&\
   jupyter labextension install jupyterlab_templates && \
   jupyter serverextension enable --py jupyterlab_templates
 
-# More R packages
-RUN pip install r-tidyverse \
-    r-fs \
-    r-reticulate \
-    r-hmisc \
-    r-rcpp \
-    r-odbc \
-    r-evaluate \
-    r-data.table \
-    r-expm \
-    r-rlang \
-    r-remotes \
-    r-flextable \
-    r-mlr \
-    r-ranger \
-    r-rcurl \
-    r-feather \
-    r-jsonlite \
-    r-gbm \
-    r-xgboost \
-    r-randomforest 
-
 
 #setup R configs
 # Install h2o for R

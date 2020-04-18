@@ -2,8 +2,47 @@ FROM jupyter/pyspark-notebook
 
 LABEL maintainer="Ogi Stancevic <ognjen.stancevic@westpac.com.au>"
 
-RUN conda config --append channels conda-forge &&\
-    conda config --append channels r &&\
+USER root
+
+# RSpark config
+ENV R_LIBS_USER $SPARK_HOME/R/lib
+RUN fix-permissions $R_LIBS_USER
+
+# R pre-requisites
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    fonts-dejavu \
+    gfortran \
+    gcc && \
+    rm -rf /var/lib/apt/lists/*
+
+USER $NB_UID
+
+# R packages
+RUN conda install --quiet --yes \
+    'r-base=3.6.2' \
+    'r-ggplot2=3.2*' \
+    'r-irkernel=1.1*' \
+    'r-rcurl=1.98*' \
+    'r-sparklyr=1.1*' \
+    && \
+    conda clean --all -f -y && \
+    fix-permissions $CONDA_DIR && \
+    fix-permissions /home/$NB_USER
+
+# Apache Toree kernel
+RUN pip install --no-cache-dir \
+    https://dist.apache.org/repos/dist/release/incubator/toree/0.3.0-incubating/toree-pip/toree-0.3.0.tar.gz \
+    && \
+    jupyter toree install --sys-prefix && \
+    rm -rf /home/$NB_USER/.local && \
+    fix-permissions $CONDA_DIR && \
+    fix-permissions /home/$NB_USER
+
+
+# Extra Installation for model risk team
+RUN conda config --add channels conda-forge &&\
+	conda config --add channels r &&\
     conda update --yes --all &&\
 	conda clean -a -y
 
@@ -15,21 +54,13 @@ RUN jupyter labextension install --no-build @jupyterlab/toc && \
 
 USER root
 
-# RSpark config
-ENV R_LIBS_USER $SPARK_HOME/R/lib
-RUN fix-permissions $R_LIBS_USER
-
-
 # Teradata pre-requisites
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+	apt-get install -y --no-install-recommends \
     gdebi-core \
     openssh-client \
     sshfs \
-    fonts-dejavu \
     tzdata \
-    gfortran \
-    gcc \
     dpkg \
     cifs-utils \
     vim \
@@ -45,11 +76,7 @@ USER $NB_UID
 
 # R packages
 # Install additional R packages here
-RUN conda install --quiet --yes \
-    'r-mro' \
-    'r-irkernel=0.8*' \
-    'r-rcurl' \ 
-	jupyter_contrib_nbextensions \
+RUN pip install jupyter_contrib_nbextensions \
 	rpy2 \
 	altair \
 	vega \
@@ -65,17 +92,15 @@ RUN conda install --quiet --yes \
   	simplegeneric \
   	tqdm \
 	pyodbc \
-	python-docx && \
-    conda install -y -c h2oai h2o && \
-    conda clean -a -y
+	python-docx
+
 
 RUN pip install jupyterlab_templates &&\
   jupyter labextension install jupyterlab_templates && \
   jupyter serverextension enable --py jupyterlab_templates
 
 # More R packages
-  RUN conda install \
-    r-tidyverse \
+RUN pip install r-tidyverse \
     r-fs \
     r-reticulate \
     r-hmisc \
